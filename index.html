@@ -1,58 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Multi-Patient Triage Checker</title>
-    <style>
-        body { 
-            font-family: sans-serif; 
-            line-height: 1.6; 
-            padding: 20px; 
-            background-color: #f4f4f9; 
-            position: relative; 
-            background-image: repeating-linear-gradient(
-                45deg,
-                rgba(0,0,0,0.03) 0,
-                rgba(0,0,0,0.03) 1px,
-                transparent 1px,
-                transparent 100px
-            );
-        }
-        .container { 
-            position: relative; 
-            z-index: 10; 
-            max-width: 900px; 
-            margin: auto; 
-            background: white; 
-            padding: 25px; 
-            border-radius: 8px; 
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
-        }
-        h2 { color: #0056b3; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        select, input[type="text"] { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; }
-        button:hover { background-color: #218838; }
-        .patient-section { border: 2px solid #0056b3; padding: 15px; margin-top: 25px; border-radius: 6px; background-color: #e6f7ff; }
-        .patient-header { background-color: #0056b3; color: white; padding: 8px; margin: -15px -15px 15px -15px; border-radius: 4px 4px 0 0; font-size: 1.1em; }
-        .priority-result { margin-top: 25px; padding: 15px; border-radius: 4px; font-size: 1.1em; font-weight: bold; }
-        .critical { background-color: #ffcccc; color: #cc0000; border: 1px solid #ff9999; }
-        .high { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .mediumhigh { background-color: #ffebcc; color: #cc6600; border: 1px solid #ffcc99; }
-        .medium { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .low { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        #results-summary ul { list-style: none; padding: 0; }
-        #results-summary li { margin: 8px 0; padding: 10px; border-left: 5px solid #0056b3; background-color: #f9f9f9; }
-        #results-summary h3 { margin-top: 25px; }
-    </style>
+<meta charset="UTF-8">
+<title>Hospital Triage – Priority Checker</title>
+<style>
+    :root{
+        --primary:#0056b3;
+        --bg:#f4f6fb;
+        --card:#ffffff;
+        --accent:#28a745;
+    }
+    body{
+        margin:0;
+        font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:var(--bg);
+    }
+    .topbar{
+        background:var(--primary);
+        color:#fff;
+        padding:12px 18px;
+        font-weight:600;
+        font-size:1.05rem;
+        text-align:center;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    }
+    .container{
+        max-width:900px;
+        margin:16px auto;
+        padding:12px;
+    }
+    h2{
+        color:var(--primary);
+        text-align:center;
+        margin:8px 0 10px;
+        font-size:1.2rem;
+        border-bottom:2px solid #dde3f0;
+        padding-bottom:6px;
+    }
+    .subtitle{
+        font-size:0.9rem;
+        color:#607d8b;
+        text-align:center;
+        margin-bottom:12px;
+    }
+    label{
+        display:block;
+        font-weight:600;
+        margin-top:8px;
+        font-size:0.9rem;
+    }
+    select,input{
+        width:100%;
+        padding:8px;
+        margin-top:4px;
+        border-radius:6px;
+        border:1px solid #cfd8e3;
+        font-size:0.9rem;
+        box-sizing:border-box;
+    }
+    select:focus,input:focus{
+        outline:none;
+        border-color:var(--primary);
+        box-shadow:0 0 0 1px rgba(0,86,179,0.2);
+    }
+    .btn{
+        width:100%;
+        padding:12px;
+        margin-top:14px;
+        border:none;
+        border-radius:6px;
+        font-weight:600;
+        font-size:0.95rem;
+        color:#fff;
+        cursor:pointer;
+    }
+    .btn-primary{background:var(--accent);}
+    .btn-add{background:#0066cc;}
+    .btn:active{transform:scale(0.99);}
+    .patient-section{
+        background:var(--card);
+        border-radius:10px;
+        padding:12px;
+        margin-top:14px;
+        box-shadow:0 3px 10px rgba(0,0,0,0.12);
+        border-left:4px solid var(--primary);
+    }
+    .patient-header{
+        display:flex;
+        justify-content:space-between;
+        font-weight:700;
+        color:var(--primary);
+        margin-bottom:6px;
+    }
+    .remove-btn{
+        background:#e53935;
+        color:#fff;
+        border:none;
+        border-radius:4px;
+        padding:2px 8px;
+        font-size:0.8rem;
+        cursor:pointer;
+    }
+    .priority-result{
+        margin-top:10px;
+        padding:10px;
+        border-radius:6px;
+        font-size:0.88rem;
+    }
+    .critical{background:#ffdde0;border-left:4px solid #c62828;}
+    .high{background:#ffe9d6;border-left:4px solid #ef6c00;}
+    .medium{background:#fffbd7;border-left:4px solid #f9a825;}
+    .low{background:#e8ffe7;border-left:4px solid #2e7d32;}
+    #results-summary ul{
+        list-style:none;
+        padding:0;
+        margin-top:14px;
+    }
+    #results-summary li{
+        background:#ffffff;
+        margin-top:8px;
+        padding:10px;
+        border-radius:6px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.1);
+        font-size:0.9rem;
+    }
+</style>
 </head>
 <body>
 
+<div class="topbar">Hospital Triage Priority – India</div>
+
 <div class="container">
-    <h2>🏥 Multi-Patient Triage Checker</h2>
-    
-    <label for="numPatients">Select Number of Patients:</label>
-    <select id="numPatients" onchange="generatePatientSections()">
+    <h2>🧑‍⚕ Patient Priority Checker</h2>
+    <p class="subtitle">Who should be seen first? Fill simple details and check.</p>
+
+    <label for="numPatients">Initial Patients (max 8):</label>
+    <select id="numPatients" onchange="loadInitialPatients()">
+        <option value="">-- Select --</option>
         <option value="1">1 Patient</option>
         <option value="2">2 Patients</option>
         <option value="3">3 Patients</option>
@@ -63,160 +147,266 @@
         <option value="8">8 Patients</option>
     </select>
 
-    <div id="patient-inputs"></div>
-    <button onclick="checkAllPriorities()">Check All Priorities</button>
+    <button id="addBtn" class="btn btn-add" style="display:none;" onclick="addPatient()">+ Add Patient</button>
+
+    <div id="patient-container"></div>
+
+    <button id="checkBtn" class="btn btn-primary" style="display:none;" onclick="checkAllPriorities()">Check Priority</button>
+
     <div id="results-summary"></div>
 </div>
 
 <script>
-const diseaseData = {
-    "Heart/Cardiac": { 
-        priority: "CRITICAL", 
-        params: ["Chest Pain Severity", "Pulse", "BP Systolic"], 
-        thresholds: { 'Chest Pain Severity': 'Severe', 'Pulse': 'Arrhythmia', 'BP Systolic': 180 } 
+// ---------------- India Common Diseases ----------------
+const diseaseConfig = {
+    "Heart/Problem": {
+        label: "Heart Problem",
+        basePriority: "CRITICAL",
+        weight: 95,
+        params: [
+            { name: "Chest Pain Severity", type: "severity" },
+            { name: "Breathlessness Severity", type: "severity" },
+            { name: "Pulse (bpm)", type: "number" },
+            { name: "BP Systolic", type: "number" }
+        ],
+        thresholds: { "Pulse (bpm)": 120, "BP Systolic": 160 }
     },
-    "Respiratory/Asthma": { 
-        priority: "HIGH", 
-        params: ["SpO2 (%)", "Breathing Rate"], 
-        thresholds: { 'SpO2 (%)': 90 } 
+    "Breathing/Problem": {
+        label: "Breathing Problem",
+        basePriority: "HIGH",
+        weight: 75,
+        params: [
+            { name: "Breathing Difficulty Severity", type: "severity" },
+            { name: "SpO2 (%)", type: "number" },
+            { name: "Breathing Rate", type: "number" }
+        ],
+        thresholds: { "SpO2 (%)": 93, "Breathing Rate": 24 }
     },
-    "Diabetes/Hyperglycemia": { 
-        priority: "MEDIUM-HIGH", 
-        params: ["Blood Sugar (mg/dL)"], 
-        thresholds: { 'Blood Sugar (mg/dL)': 300 } 
+    "Fever/Infection": {
+        label: "Fever / Infection",
+        basePriority: "MEDIUM",
+        weight: 30,
+        params: [
+            { name: "Fever Severity", type: "severity" },
+            { name: "Temp (°F)", type: "number" }
+        ],
+        thresholds: { "Temp (°F)": 102 }
     },
-    "Hypertension/High BP": { 
-        priority: "HIGH", 
-        params: ["BP Systolic", "BP Diastolic"], 
-        thresholds: { "BP Systolic": 160, "BP Diastolic": 100 } 
+    "Sugar/Problem": {
+        label: "Sugar Problem",
+        basePriority: "MEDIUM-HIGH",
+        weight: 55,
+        params: [
+            { name: "Sugar Severity", type: "severity" },
+            { name: "Blood Sugar (mg/dL)", type: "number" }
+        ],
+        thresholds: { "Blood Sugar (mg/dL)": 300 }
     },
-    "Fever/Infection": { 
-        priority: "MEDIUM", 
-        params: ["Temp (°F)"], 
-        thresholds: { 'Temp (°F)': 102 } 
+    "BP/Problem": {
+        label: "Blood Pressure Problem",
+        basePriority: "HIGH",
+        weight: 60,
+        params: [
+            { name: "Headache Severity", type: "severity" },
+            { name: "BP Systolic", type: "number" },
+            { name: "BP Diastolic", type: "number" }
+        ],
+        thresholds: { "BP Systolic": 160, "BP Diastolic": 100 }
+    },
+    "Stroke/Symptoms": {
+        label: "Stroke-like Symptoms",
+        basePriority: "CRITICAL",
+        weight: 90,
+        params: [
+            { name: "Weakness Severity", type: "severity" },
+            { name: "Speech Problem Severity", type: "severity" },
+            { name: "BP Systolic", type: "number" }
+        ],
+        thresholds: { "BP Systolic": 180 }
+    },
+    "Child/FeverCough": {
+        label: "Child Fever / Cough",
+        basePriority: "MEDIUM-HIGH",
+        weight: 50,
+        params: [
+            { name: "Child Fever Severity", type: "severity" },
+            { name: "Temp (°F)", type: "number" },
+            { name: "Child Breathing Difficulty Severity", type: "severity" }
+        ],
+        thresholds: { "Temp (°F)": 102 }
     }
 };
 
-const getInputId = (patientIndex, param) => `patient${patientIndex}-${param.replace(/[ %()]/g, '')}`;
-
-function createInputField(patientIndex, param) {
-    const inputId = getInputId(patientIndex, param);
-    let placeholderText = "Enter " + param + " value";
-    if (param === "BP Systolic") placeholderText = "e.g., 120, 130";
-    else if (param === "BP Diastolic") placeholderText = "e.g., 80, 90";
-    else if (param === "Pulse") placeholderText = "e.g., 70, 100";
-    else if (param === "SpO2 (%)") placeholderText = "e.g., 95, 88";
-    else if (param === "Temp (°F)") placeholderText = "e.g., 101, 102";
-    else if (param === "Blood Sugar (mg/dL)") placeholderText = "e.g., 180, 250";
-
-    let html = `<label for="${inputId}">${param}:</label>`;
-    if (param.includes('Severity') || param.includes('Difficulty')) {
-        html += `<select id="${inputId}">
-                    <option value="Mild">Mild / Normal</option>
-                    <option value="Moderate">Moderate / Slight</option>
-                    <option value="Severe">Severe / High</option>
-                 </select>`;
-    } else if (param === 'Consciousness') {
-        html += `<select id="${inputId}">
-                    <option value="Normal">Normal</option>
-                    <option value="Reduced">Reduced / Confused</option>
-                 </select>`;
-    } else {
-         html += `<input type="text" id="${inputId}" placeholder="${placeholderText}">`;
-    }
-    return html;
+// --- scoring functions ---
+function basePriorityScore(p){
+    if(p === "CRITICAL") return 100;
+    if(p === "HIGH") return 80;
+    if(p === "MEDIUM-HIGH") return 60;
+    if(p === "MEDIUM") return 40;
+    return 20;
 }
+function severityScore(s){
+    if(s==="Mild")return 0;
+    if(s==="Moderate")return 15;
+    return 35;
+}
+function inputId(n,p){return p${n}-${p.replace(/[ %()]/g,'')};}
 
-function generatePatientSection(index) {
-    const patientNum = index + 1;
-    return `<div class="patient-section" id="patient-${patientNum}-section">
-        <div class="patient-header">Patient ${patientNum}</div>
-        <label for="disease-${patientNum}">Select Disease / Condition:</label>
-        <select id="disease-${patientNum}" onchange="showParameters(${patientNum})">
-            <option value="">-- Select --</option>
-            <option value="Heart/Cardiac">Heart / Cardiac Problems</option>
-            <option value="Respiratory/Asthma">Respiratory / Asthma</option>
-            <option value="Diabetes/Hyperglycemia">Diabetes / Hyperglycemia</option>
-            <option value="Hypertension/High BP">Hypertension / High BP</option>
-            <option value="Fever/Infection">Fever / Infection</option>
-        </select>
-        <div id="parameter-input-${patientNum}"></div>
-        <div id="result-${patientNum}" class="priority-result"></div>
+let patientCount = 0;
+
+// --- UI cards ---
+function makePatientCard(n){
+    let ops = '<option value="">-- Select --</option>';
+    for(const key in diseaseConfig){
+        ops += <option value="${key}">${diseaseConfig[key].label}</option>;
+    }
+    return `
+    <div class="patient-section" id="sec${n}">
+        <div class="patient-header">
+            <span>Patient ${n}</span>
+            <button class="remove-btn" onclick="removePatient(${n})">X</button>
+        </div>
+
+        <label>Patient Name:</label>
+        <input type="text" id="name${n}" placeholder="e.g., Mr. Kumar">
+
+        <label>Main Complaint:</label>
+        <select id="dis${n}" onchange="showParams(${n})">${ops}</select>
+
+        <div id="params${n}"></div>
+        <div id="result${n}" class="priority-result"></div>
     </div>`;
 }
 
-function generatePatientSections() {
-    const numPatients = parseInt(document.getElementById('numPatients').value);
-    const inputDiv = document.getElementById('patient-inputs');
-    inputDiv.innerHTML = '';
-    for (let i = 0; i < numPatients; i++) {
-        inputDiv.innerHTML += generatePatientSection(i);
+function showParams(n){
+    const dis=document.getElementById(dis${n}).value;
+    const box=document.getElementById(params${n});
+    box.innerHTML="";
+    if(!dis)return;
+
+    const cfg=diseaseConfig[dis];
+    let html="";
+    for(const p of cfg.params){
+        const id=inputId(n,p.name);
+        html+=<label>${p.name}</label>;
+        if(p.type==="severity"){
+            html+=`<select id="${id}">
+                <option value="Mild">Mild</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Severe">Severe</option>
+            </select>`;
+        }else{
+            html+=<input type="number" id="${id}" placeholder="Enter ${p.name}">;
+        }
     }
+    box.innerHTML=html;
 }
 
-function showParameters(patientNum) {
-    const select = document.getElementById(`disease-${patientNum}`);
-    const diseaseName = select.value;
-    const inputDiv = document.getElementById(`parameter-input-${patientNum}`);
-    if (!diseaseName) { inputDiv.innerHTML = ''; return; }
-    const data = diseaseData[diseaseName];
-    let html = '';
-    data.params.forEach(param => { if (param !== 'N/A') html += createInputField(patientNum, param); });
-    inputDiv.innerHTML = html;
+// --- load initial patients ---
+function loadInitialPatients(){
+    const val=parseInt(document.getElementById('numPatients').value);
+    const box=document.getElementById('patient-container');
+    const addBtn=document.getElementById('addBtn');
+    const checkBtn=document.getElementById('checkBtn');
+
+    if(!val){
+        box.innerHTML="";
+        addBtn.style.display="none";
+        checkBtn.style.display="none";
+        return;
+    }
+    patientCount=0;
+    box.innerHTML="";
+    for(let i=1;i<=val;i++){
+        patientCount++;
+        box.innerHTML+=makePatientCard(patientCount);
+    }
+    addBtn.style.display="inline-block";
+    checkBtn.style.display="inline-block";
 }
 
-function checkAllPriorities() {
-    const numPatients = parseInt(document.getElementById('numPatients').value);
-    const summaryDiv = document.getElementById('results-summary');
-    let summaryHTML = '';
-    let patientResults = [];
+function addPatient(){
+    patientCount++;
+    document.getElementById('patient-container').innerHTML+=makePatientCard(patientCount);
+}
+function removePatient(n){
+    const el=document.getElementById(sec${n});
+    if(el)el.remove();
+}
 
-    for (let i = 1; i <= numPatients; i++) {
-        const diseaseSelect = document.getElementById(`disease-${i}`);
-        const resultDiv = document.getElementById(`result-${i}`);
-        if (!diseaseSelect || !diseaseSelect.value) {
-            resultDiv.innerHTML = `<p class="low">⚠️ Please select a disease for Patient ${i}.</p>`;
+// --- Calculate Priority ---
+function checkAllPriorities(){
+    let arr=[];
+    const out=document.getElementById('results-summary');
+    out.innerHTML="";
+
+    for(let i=1;i<=patientCount;i++){
+        const sec=document.getElementById(sec${i});
+        if(!sec)continue;
+
+        const dis=document.getElementById(dis${i}).value;
+        const res=document.getElementById(result${i});
+
+        if(!dis){
+            res.className="priority-result low";
+            res.innerHTML="⚠ Select a condition.";
             continue;
         }
-        const diseaseName = diseaseSelect.value;
-        const data = diseaseData[diseaseName];
-        let isHighRisk = false;
-        let highRiskMessage = '';
-        for (const [param, threshold] of Object.entries(data.thresholds)) {
-            const inputId = getInputId(i, param);
-            const inputValue = document.getElementById(inputId) ? document.getElementById(inputId).value.trim() : null;
-            if (inputValue) {
-                if (typeof threshold === 'number') {
-                    const numValue = parseFloat(inputValue);
-                    if ((param === 'GCS' || param.includes('SpO2')) && numValue <= threshold) { isHighRisk = true; highRiskMessage = `${param}: ${inputValue}`; break; }
-                    else if (numValue > threshold) { isHighRisk = true; highRiskMessage = `${param}: ${inputValue}`; break; }
-                } else if (inputValue === threshold) { isHighRisk = true; highRiskMessage = `${param}: ${inputValue}`; break; }
+
+        const cfg=diseaseConfig[dis];
+        const th=cfg.thresholds;
+        let severityTotal=0, isDanger=false, reason="";
+
+        for(const p of cfg.params){
+            const id=inputId(i,p.name);
+            const el=document.getElementById(id);
+            if(!el)continue;
+
+            if(p.type==="severity"){
+                const val=el.value;
+                severityTotal+=severityScore(val);
+                if(val==="Severe" && (dis==="Heart/Problem" || dis==="Stroke/Symptoms" || dis==="Breathing/Problem" || dis==="Child/FeverCough")){
+                    isDanger=true; reason=p.name+": "+val;
+                }
+            }else{
+                const v=parseFloat(el.value);
+                if(isNaN(v))continue;
+                if(th[p.name]){
+                    if(p.name==="SpO2 (%)" && v<=th[p.name]){
+                        isDanger=true;reason="SpO2: "+v;
+                    }else if(v>=th[p.name]){
+                        isDanger=true;reason=p.name+": "+v;
+                    }
+                }
+                if(p.name==="Blood Sugar (mg/dL)" && (v>=300 || v<70)){
+                    isDanger=true;reason="Blood Sugar: "+v;
+                }
             }
         }
 
-        let finalPriority = data.priority;
-        let priorityClass = finalPriority.toLowerCase().replace('-', '');
-        let detailedMessage = isHighRisk ? `**IMMEDIATE ATTENTION REQUIRED!** Reason: ${highRiskMessage}` : `Current status is stable. Base Priority: ${data.priority}.`;
-        if (isHighRisk) { finalPriority = `🚨 CRITICAL (${data.priority} Base)`; priorityClass = 'critical'; }
+        const score=basePriorityScore(cfg.basePriority)+cfg.weight+severityTotal+(isDanger?40:0);
+        let cls="low";
+        if(score>=180)cls="critical";
+        else if(score>=130)cls="high";
+        else if(score>=90)cls="medium";
 
-        resultDiv.className = `priority-result ${priorityClass}`;
-        resultDiv.innerHTML = `<p><strong>Priority Level: ${finalPriority}</strong></p><p>${detailedMessage}</p>`;
-        patientResults.push({ patient: `Patient ${i}`, priority: finalPriority, class: priorityClass });
+        const name=document.getElementById(name${i}).value||Patient ${i};
+
+        res.className="priority-result "+cls;
+        res.innerHTML=<strong>${name}</strong><br>${cfg.label}<br>Score: ${score}<br>${isDanger?("Reason: "+reason):"Stable severity"};
+
+        arr.push({name,label:cfg.label,score});
     }
 
-    if (patientResults.length > 0) {
-        const ordering = { "critical": 1, "high": 2, "mediumhigh": 3, "medium": 4, "low": 5 };
-        patientResults.sort((a,b) => ordering[a.class.replace('-', '')] - ordering[b.class.replace('-', '')]);
-        summaryHTML += `<h3>🏥 Final Treatment Order (Highest First):</h3><ul>`;
-        patientResults.forEach((res, index) => { summaryHTML += `<li class="${res.class}"><strong>${index+1}. ${res.patient}:</strong> ${res.priority}</li>`; });
-        summaryHTML += '</ul>';
-    } else summaryHTML += '<p>No patients processed.</p>';
+    arr.sort((a,b)=>b.score-a.score);
 
-    summaryDiv.innerHTML = summaryHTML;
+    let html="<h3>🏥 Priority Order</h3><ul>";
+    arr.forEach((p,i)=>{
+        html+=<li><strong>${i+1}. ${p.name}</strong> – ${p.label} (Score: ${p.score})</li>;
+    });
+    html+="</ul>";
+    out.innerHTML=html;
 }
-
-document.addEventListener('DOMContentLoaded', generatePatientSections);
 </script>
-
 </body>
 </html>
