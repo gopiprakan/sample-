@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Hospital Triage – Priority Checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
     :root{
         --primary:#0056b3;
@@ -12,15 +14,14 @@
     }
     body{
         margin:0;
-        font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family:system-ui, sans-serif;
         background:var(--bg);
     }
     .topbar{
         background:var(--primary);
         color:#fff;
-        padding:12px 18px;
+        padding:12px;
         font-weight:600;
-        font-size:1.05rem;
         text-align:center;
         box-shadow:0 2px 8px rgba(0,0,0,0.25);
     }
@@ -32,22 +33,15 @@
     h2{
         color:var(--primary);
         text-align:center;
-        margin:8px 0 10px;
+        margin:8px 0;
         font-size:1.2rem;
         border-bottom:2px solid #dde3f0;
         padding-bottom:6px;
-    }
-    .subtitle{
-        font-size:0.9rem;
-        color:#607d8b;
-        text-align:center;
-        margin-bottom:12px;
     }
     label{
         display:block;
         font-weight:600;
         margin-top:8px;
-        font-size:0.9rem;
     }
     select,input{
         width:100%;
@@ -55,13 +49,7 @@
         margin-top:4px;
         border-radius:6px;
         border:1px solid #cfd8e3;
-        font-size:0.9rem;
         box-sizing:border-box;
-    }
-    select:focus,input:focus{
-        outline:none;
-        border-color:var(--primary);
-        box-shadow:0 0 0 1px rgba(0,86,179,0.2);
     }
     .btn{
         width:100%;
@@ -70,13 +58,11 @@
         border:none;
         border-radius:6px;
         font-weight:600;
-        font-size:0.95rem;
         color:#fff;
         cursor:pointer;
     }
     .btn-primary{background:var(--accent);}
     .btn-add{background:#0066cc;}
-    .btn:active{transform:scale(0.99);}
     .patient-section{
         background:var(--card);
         border-radius:10px;
@@ -85,56 +71,45 @@
         box-shadow:0 3px 10px rgba(0,0,0,0.12);
         border-left:4px solid var(--primary);
     }
-    .patient-header{
-        display:flex;
-        justify-content:space-between;
-        font-weight:700;
-        color:var(--primary);
-        margin-bottom:6px;
+    .priority-result{
+        margin-top:10px;
+        padding:10px;
+        border-radius:6px;
+    }
+    .critical{background:#ffdde0;}
+    .high{background:#ffe9d6;}
+    .medium{background:#fffbd7;}
+    .low{background:#e8ffe7;}
+    #results-summary ul{
+        list-style:none;
+        padding:0;
+    }
+    #results-summary li{
+        background:#fff;
+        margin-top:8px;
+        padding:10px;
+        border-radius:6px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.1);
     }
     .remove-btn{
         background:#e53935;
         color:#fff;
         border:none;
+        padding:4px 8px;
+        float:right;
         border-radius:4px;
-        padding:2px 8px;
-        font-size:0.8rem;
-        cursor:pointer;
-    }
-    .priority-result{
-        margin-top:10px;
-        padding:10px;
-        border-radius:6px;
-        font-size:0.88rem;
-    }
-    .critical{background:#ffdde0;border-left:4px solid #c62828;}
-    .high{background:#ffe9d6;border-left:4px solid #ef6c00;}
-    .medium{background:#fffbd7;border-left:4px solid #f9a825;}
-    .low{background:#e8ffe7;border-left:4px solid #2e7d32;}
-    #results-summary ul{
-        list-style:none;
-        padding:0;
-        margin-top:14px;
-    }
-    #results-summary li{
-        background:#ffffff;
-        margin-top:8px;
-        padding:10px;
-        border-radius:6px;
-        box-shadow:0 2px 6px rgba(0,0,0,0.1);
-        font-size:0.9rem;
     }
 </style>
 </head>
+
 <body>
 
 <div class="topbar">Hospital Triage Priority – India</div>
 
 <div class="container">
     <h2>🧑‍⚕ Patient Priority Checker</h2>
-    <p class="subtitle">Who should be seen first? Fill simple details and check.</p>
 
-    <label for="numPatients">Initial Patients (max 8):</label>
+    <label>Initial Patients (max 8):</label>
     <select id="numPatients" onchange="loadInitialPatients()">
         <option value="">-- Select --</option>
         <option value="1">1 Patient</option>
@@ -159,254 +134,222 @@
 <script>
 // ---------------- India Common Diseases ----------------
 const diseaseConfig = {
-    "Heart/Problem": {
+    "HeartProblem": {
         label: "Heart Problem",
         basePriority: "CRITICAL",
         weight: 95,
         params: [
-            { name: "Chest Pain Severity", type: "severity" },
-            { name: "Breathlessness Severity", type: "severity" },
-            { name: "Pulse (bpm)", type: "number" },
-            { name: "BP Systolic", type: "number" }
+            { n: "ChestPain", t: "severity" },
+            { n: "Breathlessness", t: "severity" },
+            { n: "Pulse", t: "number" },
+            { n: "BPSys", t: "number" }
         ],
-        thresholds: { "Pulse (bpm)": 120, "BP Systolic": 160 }
+        thresholds: { Pulse: 120, BPSys: 160 }
     },
-    "Breathing/Problem": {
+    "BreathingProblem": {
         label: "Breathing Problem",
         basePriority: "HIGH",
         weight: 75,
         params: [
-            { name: "Breathing Difficulty Severity", type: "severity" },
-            { name: "SpO2 (%)", type: "number" },
-            { name: "Breathing Rate", type: "number" }
+            { n: "BreathingDiff", t: "severity" },
+            { n: "SpO2", t: "number" },
+            { n: "BreathRate", t: "number" }
         ],
-        thresholds: { "SpO2 (%)": 93, "Breathing Rate": 24 }
+        thresholds: { SpO2: 93, BreathRate: 24 }
     },
-    "Fever/Infection": {
+    "FeverInfection": {
         label: "Fever / Infection",
         basePriority: "MEDIUM",
         weight: 30,
         params: [
-            { name: "Fever Severity", type: "severity" },
-            { name: "Temp (°F)", type: "number" }
+            { n: "FeverSeverity", t: "severity" },
+            { n: "Temp", t: "number" }
         ],
-        thresholds: { "Temp (°F)": 102 }
+        thresholds: { Temp: 102 }
     },
-    "Sugar/Problem": {
+    "SugarProblem": {
         label: "Sugar Problem",
         basePriority: "MEDIUM-HIGH",
         weight: 55,
         params: [
-            { name: "Sugar Severity", type: "severity" },
-            { name: "Blood Sugar (mg/dL)", type: "number" }
+            { n: "SugarSeverity", t: "severity" },
+            { n: "Sugar", t: "number" }
         ],
-        thresholds: { "Blood Sugar (mg/dL)": 300 }
+        thresholds: { Sugar: 300 }
     },
-    "BP/Problem": {
+    "BPProblem": {
         label: "Blood Pressure Problem",
         basePriority: "HIGH",
         weight: 60,
         params: [
-            { name: "Headache Severity", type: "severity" },
-            { name: "BP Systolic", type: "number" },
-            { name: "BP Diastolic", type: "number" }
+            { n: "Headache", t: "severity" },
+            { n: "BPSys", t: "number" },
+            { n: "BPDia", t: "number" }
         ],
-        thresholds: { "BP Systolic": 160, "BP Diastolic": 100 }
-    },
-    "Stroke/Symptoms": {
-        label: "Stroke-like Symptoms",
-        basePriority: "CRITICAL",
-        weight: 90,
-        params: [
-            { name: "Weakness Severity", type: "severity" },
-            { name: "Speech Problem Severity", type: "severity" },
-            { name: "BP Systolic", type: "number" }
-        ],
-        thresholds: { "BP Systolic": 180 }
-    },
-    "Child/FeverCough": {
-        label: "Child Fever / Cough",
-        basePriority: "MEDIUM-HIGH",
-        weight: 50,
-        params: [
-            { name: "Child Fever Severity", type: "severity" },
-            { name: "Temp (°F)", type: "number" },
-            { name: "Child Breathing Difficulty Severity", type: "severity" }
-        ],
-        thresholds: { "Temp (°F)": 102 }
+        thresholds: { BPSys: 160, BPDia: 100 }
     }
 };
 
-// --- scoring functions ---
+// score functions
 function basePriorityScore(p){
-    if(p === "CRITICAL") return 100;
-    if(p === "HIGH") return 80;
-    if(p === "MEDIUM-HIGH") return 60;
-    if(p === "MEDIUM") return 40;
-    return 20;
+    return {CRITICAL:100,HIGH:80,"MEDIUM-HIGH":60,MEDIUM:40}[p] || 20;
 }
 function severityScore(s){
-    if(s==="Mild")return 0;
-    if(s==="Moderate")return 15;
-    return 35;
+    return {Mild:0,Moderate:15,Severe:35}[s] || 0;
 }
-function inputId(n,p){return p${n}-${p.replace(/[ %()]/g,'')};}
 
+// UI
 let patientCount = 0;
 
-// --- UI cards ---
-function makePatientCard(n){
+function patientCard(n){
     let ops = '<option value="">-- Select --</option>';
-    for(const key in diseaseConfig){
-        ops += <option value="${key}">${diseaseConfig[key].label}</option>;
+    for(const k in diseaseConfig){
+        ops += <option value="${k}">${diseaseConfig[k].label}</option>;
     }
     return `
-    <div class="patient-section" id="sec${n}">
-        <div class="patient-header">
-            <span>Patient ${n}</span>
+        <div class="patient-section" id="sec${n}">
             <button class="remove-btn" onclick="removePatient(${n})">X</button>
+
+            <label>Name:</label>
+            <input type="text" id="name${n}" placeholder="Patient ${n}">
+
+            <label>Main Complaint:</label>
+            <select id="dis${n}" onchange="showParams(${n})">${ops}</select>
+
+            <div id="params${n}"></div>
+            <div id="result${n}" class="priority-result"></div>
         </div>
-
-        <label>Patient Name:</label>
-        <input type="text" id="name${n}" placeholder="e.g., Mr. Kumar">
-
-        <label>Main Complaint:</label>
-        <select id="dis${n}" onchange="showParams(${n})">${ops}</select>
-
-        <div id="params${n}"></div>
-        <div id="result${n}" class="priority-result"></div>
-    </div>`;
+    `;
 }
 
-function showParams(n){
-    const dis=document.getElementById(dis${n}).value;
-    const box=document.getElementById(params${n});
-    box.innerHTML="";
-    if(!dis)return;
-
-    const cfg=diseaseConfig[dis];
-    let html="";
-    for(const p of cfg.params){
-        const id=inputId(n,p.name);
-        html+=<label>${p.name}</label>;
-        if(p.type==="severity"){
-            html+=`<select id="${id}">
-                <option value="Mild">Mild</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Severe">Severe</option>
-            </select>`;
-        }else{
-            html+=<input type="number" id="${id}" placeholder="Enter ${p.name}">;
-        }
-    }
-    box.innerHTML=html;
-}
-
-// --- load initial patients ---
 function loadInitialPatients(){
-    const val=parseInt(document.getElementById('numPatients').value);
-    const box=document.getElementById('patient-container');
-    const addBtn=document.getElementById('addBtn');
-    const checkBtn=document.getElementById('checkBtn');
+    const val = parseInt(document.getElementById('numPatients').value);
+    const box = document.getElementById('patient-container');
+
+    box.innerHTML = "";
+    patientCount = 0;
 
     if(!val){
-        box.innerHTML="";
-        addBtn.style.display="none";
-        checkBtn.style.display="none";
+        document.getElementById('addBtn').style.display="none";
+        document.getElementById('checkBtn').style.display="none";
         return;
     }
-    patientCount=0;
-    box.innerHTML="";
+
     for(let i=1;i<=val;i++){
         patientCount++;
-        box.innerHTML+=makePatientCard(patientCount);
+        box.innerHTML += patientCard(patientCount);
     }
-    addBtn.style.display="inline-block";
-    checkBtn.style.display="inline-block";
+
+    document.getElementById('addBtn').style.display="block";
+    document.getElementById('checkBtn').style.display="block";
 }
 
 function addPatient(){
     patientCount++;
-    document.getElementById('patient-container').innerHTML+=makePatientCard(patientCount);
-}
-function removePatient(n){
-    const el=document.getElementById(sec${n});
-    if(el)el.remove();
+    document.getElementById('patient-container').innerHTML += patientCard(patientCount);
 }
 
-// --- Calculate Priority ---
+function removePatient(n){
+    const el = document.getElementById(sec${n});
+    if(el) el.remove();
+}
+
+function showParams(n){
+    const dis = document.getElementById(dis${n}).value;
+    const box = document.getElementById(params${n});
+
+    box.innerHTML = "";
+    if(!dis) return;
+
+    const cfg = diseaseConfig[dis];
+    let html="";
+
+    cfg.params.forEach(p=>{
+        html += <label>${p.n}</label>;
+        if(p.t==="severity"){
+            html += `<select id="p${n}_${p.n}">
+                        <option>Mild</option>
+                        <option>Moderate</option>
+                        <option>Severe</option>
+                     </select>`;
+        } else {
+            html += <input type="number" id="p${n}_${p.n}">;
+        }
+    });
+
+    box.innerHTML = html;
+}
+
+// scoring
 function checkAllPriorities(){
     let arr=[];
-    const out=document.getElementById('results-summary');
-    out.innerHTML="";
+    const out = document.getElementById('results-summary');
+    out.innerHTML = "";
 
     for(let i=1;i<=patientCount;i++){
         const sec=document.getElementById(sec${i});
-        if(!sec)continue;
+        if(!sec) continue;
 
         const dis=document.getElementById(dis${i}).value;
         const res=document.getElementById(result${i});
 
         if(!dis){
             res.className="priority-result low";
-            res.innerHTML="⚠ Select a condition.";
+            res.innerHTML="Select a condition";
             continue;
         }
 
         const cfg=diseaseConfig[dis];
         const th=cfg.thresholds;
+
         let severityTotal=0, isDanger=false, reason="";
 
-        for(const p of cfg.params){
-            const id=inputId(i,p.name);
+        cfg.params.forEach(p=>{
+            const id=p${i}_${p.n};
             const el=document.getElementById(id);
-            if(!el)continue;
+            if(!el) return;
 
-            if(p.type==="severity"){
-                const val=el.value;
-                severityTotal+=severityScore(val);
-                if(val==="Severe" && (dis==="Heart/Problem" || dis==="Stroke/Symptoms" || dis==="Breathing/Problem" || dis==="Child/FeverCough")){
-                    isDanger=true; reason=p.name+": "+val;
+            if(p.t==="severity"){
+                const val = el.value;
+                severityTotal += severityScore(val);
+                if(val==="Severe"){
+                    isDanger=true;
+                    reason=p.n;
                 }
-            }else{
+            } else {
                 const v=parseFloat(el.value);
-                if(isNaN(v))continue;
-                if(th[p.name]){
-                    if(p.name==="SpO2 (%)" && v<=th[p.name]){
-                        isDanger=true;reason="SpO2: "+v;
-                    }else if(v>=th[p.name]){
-                        isDanger=true;reason=p.name+": "+v;
-                    }
-                }
-                if(p.name==="Blood Sugar (mg/dL)" && (v>=300 || v<70)){
-                    isDanger=true;reason="Blood Sugar: "+v;
+                if(isNaN(v)) return;
+                if(th[p.n] && v >= th[p.n]){
+                    isDanger=true;
+                    reason=p.n+": "+v;
                 }
             }
-        }
+        });
 
-        const score=basePriorityScore(cfg.basePriority)+cfg.weight+severityTotal+(isDanger?40:0);
+        const score = basePriorityScore(cfg.basePriority)+cfg.weight+severityTotal+(isDanger?40:0);
         let cls="low";
-        if(score>=180)cls="critical";
-        else if(score>=130)cls="high";
-        else if(score>=90)cls="medium";
+        if(score>=180) cls="critical";
+        else if(score>=130) cls="high";
+        else if(score>=90) cls="medium";
 
-        const name=document.getElementById(name${i}).value||Patient ${i};
+        const name = document.getElementById(name${i}).value || Patient ${i};
 
         res.className="priority-result "+cls;
-        res.innerHTML=<strong>${name}</strong><br>${cfg.label}<br>Score: ${score}<br>${isDanger?("Reason: "+reason):"Stable severity"};
+        res.innerHTML=<b>${name}</b><br>${cfg.label}<br>Score: ${score}<br>${isDanger?"Risk: "+reason:"Stable"};
 
-        arr.push({name,label:cfg.label,score});
+        arr.push({name:name,label:cfg.label,score:score});
     }
 
     arr.sort((a,b)=>b.score-a.score);
 
-    let html="<h3>🏥 Priority Order</h3><ul>";
+    let html="<h3>Priority Order</h3><ul>";
     arr.forEach((p,i)=>{
-        html+=<li><strong>${i+1}. ${p.name}</strong> – ${p.label} (Score: ${p.score})</li>;
+        html+=<li>${i+1}. <b>${p.name}</b> – ${p.label} (Score: ${p.score})</li>;
     });
     html+="</ul>";
-    out.innerHTML=html;
+    out.innerHTML = html;
 }
 </script>
+
 </body>
 </html>
