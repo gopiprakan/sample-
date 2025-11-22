@@ -12,7 +12,413 @@
         --card:#ffffff;
         --accent:#28a745;
     }
+    body{<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hospital Triage – Priority Checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    :root{
+        --primary:#0056b3;
+        --bg:#f4f6fb;
+        --card:#ffffff;
+        --accent:#28a745;
+    }
     body{
+        margin:0;
+        font-family:system-ui, sans-serif;
+        background:var(--bg);
+    }
+    .topbar{
+        background:var(--primary);
+        color:#fff;
+        padding:12px;
+        font-weight:600;
+        text-align:center;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    }
+    .container{
+        max-width:900px;
+        margin:16px auto;
+        padding:12px;
+    }
+    h2{
+        color:var(--primary);
+        text-align:center;
+        margin:8px 0;
+        font-size:1.2rem;
+        border-bottom:2px solid #dde3f0;
+        padding-bottom:6px;
+    }
+    label{
+        display:block;
+        font-weight:600;
+        margin-top:8px;
+    }
+    select,input{
+        width:100%;
+        padding:8px;
+        margin-top:4px;
+        border-radius:6px;
+        border:1px solid #cfd8e3;
+        box-sizing:border-box;
+    }
+    .btn{
+        width:100%;
+        padding:12px;
+        margin-top:14px;
+        border:none;
+        border-radius:6px;
+        font-weight:600;
+        color:#fff;
+        cursor:pointer;
+    }
+    .btn-primary{background:var(--accent);}
+    .btn-add{background:#0066cc;}
+    .patient-section{
+        background:var(--card);
+        border-radius:10px;
+        padding:12px;
+        margin-top:14px;
+        box-shadow:0 3px 10px rgba(0,0,0,0.12);
+        border-left:4px solid var(--primary);
+    }
+    .priority-result{
+        margin-top:10px;
+        padding:10px;
+        border-radius:6px;
+    }
+    .critical{background:#ffdde0;}
+    .high{background:#ffe9d6;}
+    .medium{background:#fffbd7;}
+    .low{background:#e8ffe7;}
+    #results-summary ul{
+        list-style:none;
+        padding:0;
+    }
+    #results-summary li{
+        background:#fff;
+        margin-top:8px;
+        padding:10px;
+        border-radius:6px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    .remove-btn{
+        background:#e53935;
+        color:#fff;
+        border:none;
+        padding:4px 8px;
+        float:right;
+        border-radius:4px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="topbar">Hospital Triage Priority – India</div>
+
+<div class="container">
+    <h2>🧑‍⚕ Patient Priority Checker</h2>
+
+    <label>Initial Patients (max 8):</label>
+    <select id="numPatients" onchange="loadInitialPatients()">
+        <option value="">-- Select --</option>
+        <option value="1">1 Patient</option>
+        <option value="2">2 Patients</option>
+        <option value="3">3 Patients</option>
+        <option value="4">4 Patients</option>
+        <option value="5">5 Patients</option>
+        <option value="6">6 Patients</option>
+        <option value="7">7 Patients</option>
+        <option value="8">8 Patients</option>
+    </select>
+
+    <button id="addBtn" class="btn btn-add" style="display:none;" onclick="addPatient()">+ Add Patient</button>
+
+    <div id="patient-container"></div>
+
+    <button id="checkBtn" class="btn btn-primary" style="display:none;" onclick="checkAllPriorities()">Check Priority</button>
+
+    <div id="results-summary"></div>
+</div>
+
+<script>
+// ---------------- India Common Diseases ----------------
+const diseaseConfig = {
+    "HeartProblem": {
+        label: "Heart Problem",
+        basePriority: "CRITICAL",
+        weight: 95,
+        params: [
+            { n: "ChestPain", t: "severity" },
+            { n: "Breathlessness", t: "severity" },
+            { n: "Pulse", t: "number" },
+            { n: "BPSys", t: "number" }
+        ],
+        thresholds: { Pulse: 120, BPSys: 160 }
+    },
+    "BreathingProblem": {
+        label: "Breathing Problem",
+        basePriority: "HIGH",
+        weight: 75,
+        params: [
+            { n: "BreathingDiff", t: "severity" },
+            { n: "SpO2", t: "number" },
+            { n: "BreathRate", t: "number" }
+        ],
+        thresholds: { SpO2: 93, BreathRate: 24 }
+    },
+    "FeverInfection": {
+        label: "Fever / Infection",
+        basePriority: "MEDIUM",
+        weight: 30,
+        params: [
+            { n: "FeverSeverity", t: "severity" },
+            { n: "Temp", t: "number" }
+        ],
+        thresholds: { Temp: 102 }
+    },
+    "SugarProblem": {
+        label: "Sugar Problem",
+        basePriority: "MEDIUM-HIGH",
+        weight: 55,
+        params: [
+            { n: "SugarSeverity", t: "severity" },
+            { n: "Sugar", t: "number" }
+        ],
+        thresholds: { Sugar: 300 }
+    },
+    "BPProblem": {
+        label: "Blood Pressure Problem",
+        basePriority: "HIGH",
+        weight: 60,
+        params: [
+            { n: "Headache", t: "severity" },
+            { n: "BPSys", t: "number" },
+            { n: "BPDia", t: "number" }
+        ],
+        thresholds: { BPSys: 160, BPDia: 100 }
+    }
+};
+
+// score functions
+function basePriorityScore(p){
+    return {CRITICAL:100,HIGH:80,"MEDIUM-HIGH":60,MEDIUM:40}[p] || 20;
+}
+function severityScore(s){
+    return {Mild:0,Moderate:15,Severe:35}[s] || 0;
+}
+
+// UI
+let patientCount = 0;
+
+function patientCard(n){
+    let ops = '<option value="">-- Select --</option>';
+    for(const k in diseaseConfig){
+        ops += <option value="${k}">${diseaseConfig[k].label}</option>;
+    }
+    return `
+        <div class="patient-section" id="sec${n}">
+            <button class="remove-btn" onclick="removePatient(${n})">X</button>
+
+            <label>Name:</label>
+            <input type="text" id="name${n}" placeholder="Patient ${n}">
+
+            <label>Main Complaint:</label>
+            <select id="dis${n}" onchange="showParams(${n})">${ops}</select>
+
+            <div id="params${n}"></div>
+            <div id="result${n}" class="priority-result"></div>
+        </div>
+    `;
+}
+
+function loadInitialPatients(){
+    const val = parseInt(document.getElementById('numPatients').value);
+    const box = document.getElementById('patient-container');
+
+    box.innerHTML = "";
+    patientCount = 0;
+
+    if(!val){
+        document.getElementById('addBtn').style.display="none";
+        document.getElementById('checkBtn').style.display="none";
+        return;
+    }
+
+    for(let i=1;i<=val;i++){
+        patientCount++;
+        box.innerHTML += patientCard(patientCount);
+    }
+
+    document.getElementById('addBtn').style.display="block";
+    document.getElementById('checkBtn').style.display="block";
+}
+
+function addPatient(){
+    patientCount++;
+    document.getElementById('patient-container').innerHTML += patientCard(patientCount);
+}
+
+function removePatient(n){
+    const el = document.getElementById(sec${n});
+    if(el) el.remove();
+}
+
+function showParams(n){
+    const dis = document.getElementById(dis${n}).value;
+    const box = document.getElementById(params${n});
+
+    box.innerHTML = "";
+    if(!dis) return;
+
+    const cfg = diseaseConfig[dis];
+    let html="";
+
+    cfg.params.forEach(p=>{
+        html += <label>${p.n}</label>;
+        if(p.t==="severity"){
+            html += `<select id="p${n}_${p.n}">
+                        <option>Mild</option>
+                        <option>Moderate</option>
+                        <option>Severe</option>
+                     </select>`;
+        } else {
+            html += <input type="number" id="p${n}_${p.n}">;
+        }
+    });
+
+    box.innerHTML = html;
+}
+
+// scoring
+function checkAllPriorities(){
+    let arr=[];
+    const out = document.getElementById('results-summary');
+    out.innerHTML = "";
+
+    // Fix: Loop only through currently existing patient IDs
+    const patientSections = document.getElementById('patient-container').querySelectorAll('.patient-section');
+    for(let i=1;i<=patientCount;i++){
+        const sec=document.getElementById(sec${i});
+        if(!sec) continue; // Skip if section was removed
+
+        const disEl=document.getElementById(dis${i});
+        if(!disEl) continue; // Skip if elements are missing
+
+        const dis=disEl.value;
+        const res=document.getElementById(result${i});
+
+        if(!dis){
+            res.className="priority-result low";
+            res.innerHTML="Select a condition";
+            continue;
+        }
+
+        const cfg=diseaseConfig[dis];
+        const th=cfg.thresholds;
+
+        let severityTotal=0, isDanger=false, reason="";
+
+        cfg.params.forEach(p=>{
+            const id=p${i}_${p.n};
+            const el=document.getElementById(id);
+            if(!el) return;
+
+            if(p.t==="severity"){
+                const val = el.value;
+                severityTotal += severityScore(val);
+                if(val==="Severe"){
+                    isDanger=true;
+                    reason=${p.n} (Severe);
+                }
+            } else {
+                const v=parseFloat(el.value);
+                if(isNaN(v)) return;
+                
+                // For Heart, check for high Pulse and BPSys
+                if (dis === "HeartProblem") {
+                    if (p.n === "Pulse" && v >= th.Pulse) {
+                        isDanger = true;
+                        reason = High Pulse: ${v};
+                    }
+                    if (p.n === "BPSys" && v >= th.BPSys) {
+                        isDanger = true;
+                        reason = High BPSys: ${v};
+                    }
+                }
+                
+                // For Breathing, check for low SpO2 and high BreathRate
+                if (dis === "BreathingProblem") {
+                    if (p.n === "SpO2" && v <= th.SpO2) { // check for <= 93
+                        isDanger = true;
+                        reason = Low SpO2: ${v};
+                    }
+                    if (p.n === "BreathRate" && v >= th.BreathRate) { // check for >= 24
+                        isDanger = true;
+                        reason = High BreathRate: ${v};
+                    }
+                }
+                
+                // For Fever, check for high Temp
+                if (p.n === "Temp" && v >= th.Temp){
+                    isDanger=true;
+                    reason=High Temp: ${v};
+                }
+                
+                // For Sugar, check for high Sugar
+                if (p.n === "Sugar" && v >= th.Sugar){
+                    isDanger=true;
+                    reason=High Sugar: ${v};
+                }
+                
+                // For BPProblem, check for high BPSys or BPDia
+                if (dis === "BPProblem") {
+                    if (p.n === "BPSys" && v >= th.BPSys) {
+                        isDanger = true;
+                        reason = High BPSys: ${v};
+                    }
+                    if (p.n === "BPDia" && v >= th.BPDia) {
+                        isDanger = true;
+                        reason = High BPDia: ${v};
+                    }
+                }
+            }
+        });
+
+        const score = basePriorityScore(cfg.basePriority)+cfg.weight+severityTotal+(isDanger?40:0);
+        let cls="low";
+        let priorityLabel="Low";
+        
+        if(score>=180) { cls="critical"; priorityLabel="Critical"; }
+        else if(score>=130) { cls="high"; priorityLabel="High"; }
+        else if(score>=90) { cls="medium"; priorityLabel="Medium"; }
+        else { priorityLabel="Low"; }
+
+        const name = document.getElementById(name${i}).value || Patient ${i};
+
+        res.className="priority-result "+cls;
+        res.innerHTML=<b>Priority: ${priorityLabel}</b><br>${cfg.label}<br>Score: ${score}<br>${isDanger ? "Risk: " + reason : "Stable"};
+
+        arr.push({name:name,label:cfg.label,score:score, priority: priorityLabel});
+    }
+
+    arr.sort((a,b)=>b.score-a.score);
+
+    let html="<h3>Priority Order</h3><ul>";
+    arr.forEach((p,i)=>{
+        html+=<li class="${p.priority.toLowerCase()}">${i+1}. <b>${p.name}</b> – ${p.priority} (Score: ${p.score})</li>;
+    });
+    html+="</ul>";
+    out.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
         margin:0;
         font-family:system-ui, sans-serif;
         background:var(--bg);
